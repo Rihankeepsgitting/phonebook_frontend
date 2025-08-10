@@ -16,6 +16,17 @@ public interface EmployeeRepository extends JpaRepository<EmployeeModel, Integer
     "OR LOWER(e.xname) LIKE LOWER(CONCAT('% ', :xname, '%'))")
     List<EmployeeModel> findByXname(@Param("xname") String xname);
 
+    @Query(value = "SELECT e FROM EmployeeModel e WHERE LOWER(e.email) LIKE LOWER(CONCAT(:email, '%'))" +
+            "OR LOWER(e.email) LIKE LOWER(CONCAT('% ', :email, '%'))")
+    List<EmployeeModel> findByEmail(@Param("email") String email);
+
+    @Query(value = "SELECT e FROM EmployeeModel e WHERE LOWER(e.phone) LIKE CONCAT('%', :phone, '%')")
+    List<EmployeeModel> findByPhone(@Param("phone") String phone);
+
+    @Query(value = "SELECT e FROM EmployeeModel e WHERE LOWER(e.designation) LIKE LOWER(CONCAT(:designation, '%'))" +
+            "OR LOWER(e.designation) LIKE LOWER(CONCAT('% ', :designation, '%'))")
+    List<EmployeeModel> findByDesignation(@Param("designation") String designation);
+
     @Query(value = "SELECT e FROM EmployeeModel e where cast(e.id as string) LIKE concat(:id, '%')")
     List<EmployeeModel> findByEmpId(@Param("id") String id);
 }

@@ -20,13 +20,33 @@ public class EmployeeController {
         return service.getAllEmployees();
     }
 
-    @GetMapping("/search/name/")
-    public List<EmployeeModel> getEmployeeByXname(@RequestParam String xname) {
-        return service.getEmployeeByXname(xname);
+    @GetMapping("search/all")
+    public List<EmployeeModel> getEmployeeByAll(@RequestParam String query){
+        return service.getEmployeeByAll(query);
     }
 
-    @GetMapping("/search/id/")
-    public List<EmployeeModel> getEmployeeById(@RequestParam String id) {
-        return service.getEmployeeById(id);
+    @GetMapping("/search/id")
+    public List<EmployeeModel> getEmployeeById(@RequestParam String query) {
+        return service.getEmployeeById(query);
+    }
+
+    @GetMapping("/search/name")
+    public List<EmployeeModel> getEmployeeByXname(@RequestParam String query) {
+        return service.getEmployeeByXname(query);
+    }
+
+    @GetMapping("/search/phone")
+    public List<EmployeeModel> getEmployeeByPhone(@RequestParam String query) {
+        return service.getEmployeeByPhone(query);
+    }
+
+    @GetMapping("/search/email")
+    public List<EmployeeModel> getEmployeeByEmail(@RequestParam String query) {
+        return service.getEmployeeByEmail(query);
+    }
+
+    @GetMapping("/designation/{designation}")
+    public List<EmployeeModel> getEmployeeByDesignation(@PathVariable String query) {
+        return service.getEmployeeByDesignation(query);
     }
 }
