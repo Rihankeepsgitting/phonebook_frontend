@@ -3,10 +3,8 @@ package com.phonedirectory.springboot.phonebook.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.phonedirectory.springboot.phonebook.jwt.JWTAuthenticationFilter;
 import com.phonedirectory.springboot.phonebook.model.ApiError;
+import com.phonedirectory.springboot.phonebook.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,74 +26,52 @@ import java.util.Arrays;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
-
-    @Value("${cors.allowed-origins}")
-    private String[] allowedOrigins;
-
-    @Value("${cors.allowed-methods}")
-    private String[] allowedMethods;
-
-    @Value("${cors.allowed-headers}")
-    private String[] allowedHeaders;
-
-    @Value("${cors.allow-credentials}")
-    private boolean allowCredentials;
-
-    @Value("${security.enabled:true}")
-    private boolean securityEnabled;
-
     private final ObjectMapper objectMapper;
+    private final CustomUserDetailsService userDetailsService;
+    private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(ObjectMapper objectMapper) {
+    public SecurityConfig(ObjectMapper objectMapper,
+                          CustomUserDetailsService userDetailsService,
+                          JWTAuthenticationFilter jwtAuthenticationFilter) {
         this.objectMapper = objectMapper;
+        this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JWTAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                );
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/auth/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            System.out.println(response);
 
-        if (securityEnabled) {
-            http.authorizeHttpRequests(authz -> authz
-                            .requestMatchers(
-                                    "/auth/**"
-
-                            ).permitAll()
-                    )
-                    .exceptionHandling(exceptions -> exceptions
-                            .authenticationEntryPoint((request, response, authException) -> {
-                                response.setContentType("application/json");
-                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                                response.getWriter().write(
-                                        objectMapper.writeValueAsString(
-                                                new ApiError("Authentication required")
-                                        )
-                                );
-                            })
-                            .accessDeniedHandler((request, response, accessDeniedException) -> {
-                                response.setContentType("application/json");
-                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                response.getWriter().write(
-                                        objectMapper.writeValueAsString(
-                                                new ApiError("Access denied")
-                                        )
-                                );
-                            })
-                    )
-                    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        } else {
-            http.authorizeHttpRequests(authz -> authz
-                    .anyRequest().permitAll()
-            );
-        }
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write(
+                                    objectMapper.writeValueAsString(
+                                            new ApiError("Authentication required")
+                                    )
+                            );
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write(
+                                    objectMapper.writeValueAsString(
+                                            new ApiError("Access denied")
+                                    )
+                            );
+                        })
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -106,21 +82,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        configuration.setAllowedMethods(Arrays.asList(allowedMethods));
-        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
-        configuration.setAllowCredentials(allowCredentials);
+
+        // Option 1: explicit origins
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+
+        // Option 2: wildcard pattern
+        // configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

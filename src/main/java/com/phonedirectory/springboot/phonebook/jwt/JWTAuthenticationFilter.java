@@ -64,6 +64,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String authHeader = request.getHeader("Authorization");
+
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 chain.doFilter(request, response);
                 return;
@@ -71,9 +72,20 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
             String token = authHeader.substring(7);
             String username = jwtTokenUtil.extractUsername(token);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtTokenUtil.validateToken(token)) {
+                    // Extract authorities (roles) from token - you need to implement this
+                    List<GrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
 
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(username, null, authorities);
 
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
             chain.doFilter(request, response);
+
         } catch (ExpiredJwtException ex) {
             handleJwtException(response, "Token has expired", HttpStatus.UNAUTHORIZED, ex);
         } catch (SignatureException | MalformedJwtException ex) {

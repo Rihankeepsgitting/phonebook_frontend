@@ -47,15 +47,8 @@ public class JWTUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public String extractRoles(String token) {
-        if (!securityEnabled) {
-            return "";
-        }
-        Claims claims = extractAllClaims(token);
-        // return as string (can be null)
-        Object val = claims.get("xroles");
-        return val != null ? String.valueOf(val) : null;
-    }
+
+
 
     public boolean validateToken(String token) {
         if (!securityEnabled) {

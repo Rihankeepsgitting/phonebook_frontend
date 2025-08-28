@@ -26,32 +26,32 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository repository;
 
-    public List<EmployeeModel> getAllEmployees() {
-        return repository.findAll();
+    public List<EmployeeModel> getAllEmployees(String business_id) {
+        return repository.findByBusinessId(business_id);
     }
 
-    public List<EmployeeModel> getEmployeeByAll(String query) {
+    public List<EmployeeModel> getEmployeeByAll(String query, String business_id) {
         Set<EmployeeModel> allSet = new HashSet<>();
 
-        allSet.addAll(getEmployeeById(query));
-        allSet.addAll(getEmployeeByXname(query));
-        allSet.addAll(getEmployeeByPhone(query));
-        allSet.addAll(getEmployeeByEmail(query));
-        allSet.addAll(getEmployeeByDesignation(query));
+        allSet.addAll(getEmployeeById(query, business_id));
+        allSet.addAll(getEmployeeByXname(query, business_id));
+        allSet.addAll(getEmployeeByPhone(query, business_id));
+        allSet.addAll(getEmployeeByEmail(query, business_id));
+        allSet.addAll(getEmployeeByDesignation(query, business_id));
 
         return new ArrayList<>(allSet);
     }
 
-    public List<EmployeeModel> getEmployeeById(String id) {
-        return repository.findByEmpId(id);
+    public List<EmployeeModel> getEmployeeById(String id, String business_id) {
+        return repository.findByEmpId(id, business_id);
     }
 
-    public List<EmployeeModel> getEmployeeByXname(String xname) { return repository.findByXname(xname); }
+    public List<EmployeeModel> getEmployeeByXname(String xname, String business_id) { return repository.findByXname(xname, business_id); }
 
-    public List<EmployeeModel> getEmployeeByPhone(String phone) { return repository.findByPhone(phone); }
+    public List<EmployeeModel> getEmployeeByPhone(String phone, String business_id) { return repository.findByPhone(phone, business_id); }
 
-    public List<EmployeeModel> getEmployeeByEmail(String email) { return repository.findByEmail(email); }
+    public List<EmployeeModel> getEmployeeByEmail(String email, String business_id) { return repository.findByEmail(email, business_id); }
 
-    public List<EmployeeModel> getEmployeeByDesignation(String designation) { return repository.findByDesignation(designation); }
+    public List<EmployeeModel> getEmployeeByDesignation(String designation, String business_id) { return repository.findByDesignation(designation, business_id); }
 
 }

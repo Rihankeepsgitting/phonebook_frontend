@@ -27,4 +27,6 @@ public class UsersModel {
     @Column(name = "upassword")
     private String upassword;
 
+    @Column(name = "uroles")
+    private String uroles;
 }

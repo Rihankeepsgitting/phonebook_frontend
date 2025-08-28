@@ -2,12 +2,13 @@ package com.phonedirectory.springboot.phonebook.jwt;
 
 import com.phonedirectory.springboot.phonebook.model.ApiError;
 import com.phonedirectory.springboot.phonebook.model.UsersModel;
-import com.phonedirectory.springboot.phonebook.service.UsersService;
+import com.phonedirectory.springboot.phonebook.repository.UsersRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,16 +25,14 @@ public class AuthController {
 
     private final JWTUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
-    private final UsersService service;
+    private final UsersRepository repository;
 
-    public AuthController(
-            JWTUtil jwtUtil,
-            AuthenticationManager authenticationManager,
-            UsersService service
-    ) {
+    public AuthController(JWTUtil jwtUtil,
+                          AuthenticationManager authenticationManager,
+                          UsersRepository repository) {
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
-        this.service = service;
+        this.repository = repository;
     }
 
     @PostMapping("/login")
@@ -43,20 +42,17 @@ public class AuthController {
 
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(uname, upassword)
+                    new UsernamePasswordAuthenticationToken(uname, upassword)
             );
 
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-            UsersModel user = service.findByUname(username);
-
-            if (user == null) {
-                log.warn("Authentication succeeded but user record not found for username: {}", username);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new ApiError("Internal error: user record not found"));
-            }
+            UsersModel user = repository.findByUname(username);
 
             Map<String, Object> claims = new HashMap<>();
             claims.put("id", user.getId());
+            claims.put("business_id", user.getBusiness_id());
+            claims.put("uname", user.getUname());
+            claims.put("uroles", user.getUroles());
 
             String token = jwtUtil.generateTokenWithClaims(username, claims);
             Map<String, Object> response = new HashMap<>();
@@ -66,11 +62,7 @@ public class AuthController {
         } catch (AuthenticationException ex) {
             log.info("Authentication failed for username: {} - {}", uname, ex.getClass().getSimpleName());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiError("Invalid credentials. Check your username and password."));
-        } catch (Exception ex) {
-            log.error("Unexpected error during login", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiError("Internal server error"));
+                    .body(new ApiError("Invalid credentials"));
         }
     }
 
@@ -81,20 +73,14 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError("Authorization header missing"));
             }
 
-            String token = authHeader;
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
-            }
+            String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
 
             if (!jwtUtil.validateToken(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Invalid token"));
             }
 
             String username = jwtUtil.extractUsername(token);
-            UsersModel user = service.findByUname(username);
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("User not found"));
-            }
+            UsersModel user = repository.findByUname(username);
 
             return ResponseEntity.ok(user);
         } catch (Exception ex) {
