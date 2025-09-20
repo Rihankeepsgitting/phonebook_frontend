@@ -13,6 +13,11 @@ public class BusinessController {
     @Autowired
     private BusinessService businessService;
 
+    @GetMapping("/all")
+    public List<BusinessModel> getAllBusiness(){
+        return businessService.getAllBusiness();
+    }
+
     @GetMapping("/{business_id}")
     public List<BusinessModel> getBusiness(@PathVariable("business_id") String business_id){
         return businessService.findByBusinessId(business_id);

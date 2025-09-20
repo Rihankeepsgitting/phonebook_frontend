@@ -15,6 +15,10 @@ public class BusinessService {
     @Autowired
     private BusinessRepository businessRepository;
 
+    public List<BusinessModel> getAllBusiness(){
+        return businessRepository.findAll();
+    }
+
     public List<BusinessModel> findByBusinessId(@Param("business_id") String business_id) {
         return businessRepository.findByBusinessId(business_id);
     }

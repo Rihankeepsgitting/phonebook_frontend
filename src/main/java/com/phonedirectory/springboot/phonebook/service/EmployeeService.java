@@ -30,6 +30,14 @@ public class EmployeeService {
         return repository.findByBusinessId(business_id);
     }
 
+    public List<EmployeeModel> getAllEmployeesForAddUser() {
+        return repository.findByUserNotIn();
+    }
+
+    public List<EmployeeModel> getAllEmployeesForUpdateUser() {
+        return repository.findByUserIn();
+    }
+
     public List<EmployeeModel> getEmployeeByAll(String query, String business_id) {
         Set<EmployeeModel> allSet = new HashSet<>();
 
